@@ -1,0 +1,57 @@
+service: serverless-express-api
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+  stage: dev                             # Customize as dev, staging, prod
+  timeout: 10                            # Max Lambda duration in seconds
+  memorySize: 256                        # Adjust based on app needs
+  environment:
+    # Core environment variables with defaults
+    NODE_ENV: "PRODUCTION"
+    DB_HOST: ${env:DB_HOST, 'mydb.example.com'}
+    MONGODB_URI: ${env:MONGODB_URI, 'mongodb-test'}
+    API_SECRET: ${env:API_SECRET, 'supersecret'}
+    DEBASIS: ${env:DEBASIS, 'SDSDSDSD--'}
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+          Resource: "*"
+
+functions:
+  api:
+    handler: handler.handler
+    events:
+      - httpApi:
+          path: /{proxy+}
+          method: '*'
+
+plugins:
+  - serverless-dotenv-plugin             # Load .env files into environment
+
+package:
+  exclude:
+    - node_modules/aws-sdk               # AWS SDK is already available in Lambda
+    - .git/**
+    - .vscode/**
+    - test/**
+    - README.md
+    - server.js
+    - .env
+
+custom:
+  dotenv:
+    basePath: .
+    override: false                       # Allow .env to override variables
+    logging: true                        # Enable logging for debugging
+    exclude: 
+      - NODE_ENV                        # Exclude NODE_ENV from being loaded
+      - DB_HOST                         # Exclude DB_HOST from being loaded
+
